@@ -2,4 +2,3 @@ streamlit
 moviepy
 pydub
 ffmpeg-python
-shutil

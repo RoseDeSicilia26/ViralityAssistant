@@ -156,36 +156,36 @@ def main():
         st.sidebar.markdown(f"**Creators Similar to You:** {creators_similar}")
         st.sidebar.markdown(f"**Reason for Video:** {reason_for_video}")
         st.sidebar.markdown(f"**Purpose of Video:** {purpose_of_video}")
-        st.sidebar.video(video_file)
+        # st.sidebar.video(video_file)
 
-        # Save uploaded file to a temporary location
-        video_path = video_file.name
-        with open(video_path, "wb") as f:
-            f.write(video_file.getbuffer())
+        # # Save uploaded file to a temporary location
+        # video_path = video_file.name
+        # with open(video_path, "wb") as f:
+        #     f.write(video_file.getbuffer())
 
-        # Process the video and display results
-        st.write("Processing the video... This may take a while.")
-        result = process_video(video_path)
+        # # Process the video and display results
+        # st.write("Processing the video... This may take a while.")
+        # result = process_video(video_path)
 
-        st.subheader("Metadata")
-        st.json(result['metadata'])
+        # st.subheader("Metadata")
+        # st.json(result['metadata'])
         
-        st.subheader("Extracted Data")
+        # st.subheader("Extracted Data")
 
-        st.markdown("**Audio Path**")
-        st.write(result['data']['audio_path'])
+        # st.markdown("**Audio Path**")
+        # st.write(result['data']['audio_path'])
 
-        st.markdown("**Frames**")
-        for frame in result['data']['frames']:
-            st.image(frame)
+        # st.markdown("**Frames**")
+        # for frame in result['data']['frames']:
+        #     st.image(frame)
 
-        st.markdown("**Separated Audio Components**")
-        for root, dirs, files in os.walk(result['data']['separated_audio_folder']):
-            for file in files:
-                st.write(os.path.join(root, file))
+        # st.markdown("**Separated Audio Components**")
+        # for root, dirs, files in os.walk(result['data']['separated_audio_folder']):
+        #     for file in files:
+        #         st.write(os.path.join(root, file))
 
-        st.markdown("**Decibel Levels**")
-        st.line_chart(result['data']['decibel_levels'])
+        # st.markdown("**Decibel Levels**")
+        # st.line_chart(result['data']['decibel_levels'])
 
 if __name__ == "__main__":
     # Cleanup directories at the start of the session

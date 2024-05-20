@@ -1,143 +1,85 @@
-import streamlit as st
 import os
-
-os.environ["IMAGEIO_FFMPEG_EXE"] = "/path/to/ffmpeg"  # Update this to the correct path
-
 import streamlit as st
-import shutil
-from moviepy.editor import VideoFileClip
-# from spleeter.separator import Separator
-from pydub import AudioSegment
+import subprocess
+import numpy as np
 import ffmpeg
 
-# # Metadata extraction functions
-# def get_duration(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     return float(probe['format']['duration'])
+class VideoDataExtractor:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.probe = ffmpeg.probe(file_path)
+        self.video_info = next(stream for stream in self.probe['streams'] if stream['codec_type'] == 'video')
+        self.audio_info = next(stream for stream in self.probe['streams'] if stream['codec_type'] == 'audio')
 
-# def get_resolution(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     video_stream = next(stream for stream in probe['streams'] if stream['codec_type'] == 'video')
-#     return int(video_stream['width']), int(video_stream['height'])
+    def get_duration(self):
+        return self.probe['format']['duration']
 
-# def get_file_size(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     return int(probe['format']['size'])
+    def get_file_size(self):
+        return self.probe['format']['size']
 
-# def get_frame_rate(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     video_stream = next(stream for stream in probe['streams'] if stream['codec_type'] == 'video')
-#     return eval(video_stream['avg_frame_rate'])
+    def get_resolution(self):
+        return (self.video_info['width'], self.video_info['height'])
 
-# def get_bit_rate(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     return int(probe['format']['bit_rate'])
+    def get_frame_rate(self):
+        return eval(self.video_info['r_frame_rate'])
 
-# def get_aspect_ratio(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     video_stream = next(stream for stream in probe['streams'] if stream['codec_type'] == 'video')
-#     return video_stream.get('display_aspect_ratio', f"{video_stream['width']}:{video_stream['height']}")
+    def get_video_bit_rate(self):
+        return self.video_info['bit_rate']
 
-# def get_codec(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     video_stream = next(stream for stream in probe['streams'] if stream['codec_type'] == 'video')
-#     audio_stream = next(stream for stream in probe['streams'] if stream['codec_type'] == 'audio')
-#     return video_stream['codec_name'], audio_stream['codec_name']
+    # def get_aspect_ratio(self):
+    #     return self.video_info['display_aspect_ratio']
 
-# def get_audio_sample_rate(video_path):
-#     probe = ffmpeg.probe(video_path)
-#     audio_stream = next(stream for stream in probe['streams'] if stream['codec_type'] == 'audio')
-#     return int(audio_stream['sample_rate'])
+    def get_video_codec(self):
+        return self.video_info['codec_name']
 
-# # Data extraction functions
-# def extract_audio(video_path, output_audio_path, audio_quality):
-#     video = VideoFileClip(video_path)
-#     video.audio.write_audiofile(output_audio_path, codec='mp3', bitrate=f'{audio_quality}k')
-#     return output_audio_path
+    def get_audio_bit_rate(self):
+        return self.audio_info['bit_rate']
 
-# def extract_frames(video_path, output_folder, frame_rate, quality):
-#     video = VideoFileClip(video_path)
-#     frame_paths = []
-#     for i, frame in enumerate(video.iter_frames(fps=frame_rate)):
-#         frame_path = f"{output_folder}/frame_{i:04d}.jpg"
-#         frame.save_frame(frame_path, quality=quality)
-#         frame_paths.append(frame_path)
-#     return frame_paths
+    def get_audio_sample_rate(self):
+        return self.audio_info['sample_rate']
 
-# # def separate_audio(audio_path, output_folder):
-# #     separator = Separator('spleeter:5stems')
-# #     separator.separate_to_file(audio_path, output_folder)
-# #     return output_folder
+    def get_audio_sample_bit_depth(self):
+        return self.audio_info['bits_per_sample']
 
-# def get_decibel_levels(audio_path):
-#     audio = AudioSegment.from_file(audio_path)
-#     decibels = [segment.dBFS for segment in audio[::1000]]  # Measure dBFS every second
-#     return decibels
+    # def get_decibel_levels(self, chunk_size=1000):
+    #     command = [
+    #         'ffmpeg', '-i', self.file_path,
+    #         '-af', 'volumedetect',
+    #         '-f', 'null', '-'
+    #     ]
 
-# # Aggregating everything
-# def process_video(video_path, audio_quality=192, frame_quality=95, frame_rate=1):
-#     # Create directories
-#     frames_folder = 'frames'
-#     separated_audio_folder = 'separated_audio'
-#     if not os.path.exists(frames_folder):
-#         os.makedirs(frames_folder)
-#     if not os.path.exists(separated_audio_folder):
-#         os.makedirs(separated_audio_folder)
+    #     result = subprocess.run(command, stderr=subprocess.PIPE, text=True)
+    #     output = result.stderr
 
-#     # Extract metadata
-#     metadata = {
-#         'duration': get_duration(video_path),
-#         'resolution': get_resolution(video_path),
-#         'file_size': get_file_size(video_path),
-#         'frame_rate': get_frame_rate(video_path),
-#         'bit_rate': get_bit_rate(video_path),
-#         'aspect_ratio': get_aspect_ratio(video_path),
-#         'codec': get_codec(video_path),
-#         'audio_sample_rate': get_audio_sample_rate(video_path),
-#     }
+    #     decibel_levels = []
+    #     for line in output.split('\n'):
+    #         if 'mean_volume' in line:
+    #             parts = line.split()
+    #             for part in parts:
+    #                 if 'mean_volume:' in part:
+    #                     decibel_levels.append(float(part.split(':')[-1].replace('dB', '')))
 
-#     # Extract audio
-#     audio_path = extract_audio(video_path, 'output.mp3', audio_quality)
-
-#     # Extract frames
-#     frame_paths = extract_frames(video_path, frames_folder, frame_rate, frame_quality)
-
-#     # # Separate audio components
-#     # separated_audio_folder = separate_audio(audio_path, separated_audio_folder)
-
-#     # Get decibel levels
-#     decibel_levels = get_decibel_levels(audio_path)
-
-#     # Aggregate data results
-#     data = {
-#         'audio_path': audio_path,
-#         'frames': frame_paths,
-#         # 'separated_audio_folder': separated_audio_folder,
-#         'decibel_levels': decibel_levels,
-#     }
-
-#     return {'metadata': metadata, 'data': data}
+    #     return decibel_levels
 
 def main():
     st.title("Video Upload Form")
 
-    # Sidebar form
     with st.sidebar:
         st.header("Upload Your Video")
         video_file = st.file_uploader("Upload Video", type=["mp4", "mov", "avi"])
-        
+
         st.subheader("Video Details")
         video_title = st.text_input("Video Title")
-        
+
         niche_options = [
-            "Technology", "Education", "Entertainment", "Lifestyle", 
+            "Technology", "Education", "Entertainment", "Lifestyle",
             "Fitness", "Cooking", "Travel", "Gaming", "Music", "Other"
         ]
         video_niche = st.multiselect("Niche of Video on Social Media", niche_options)
 
         video_time = st.number_input("Amount of Time Dedicated to Creating the Video (hours)", min_value=0, max_value=100, step=1)
         video_inspiration = st.text_area("Inspiration for Video")
-        
+
         creators_look_up = st.text_input("Creators You Look Up To")
         creators_similar = st.text_input("Creators Who Make Content Similar to Yours")
         reason_for_video = st.text_area("Reason for Video")
@@ -145,8 +87,7 @@ def main():
 
         submit_button = st.button("Submit")
 
-    if submit_button: #and video_file is not None:
-
+    if submit_button and video_file is not None:
         st.sidebar.subheader("Submitted Data")
         st.sidebar.markdown(f"**Video Title:** {video_title}")
         st.sidebar.markdown(f"**Niche:** {', '.join(video_niche)}")
@@ -156,44 +97,50 @@ def main():
         st.sidebar.markdown(f"**Creators Similar to You:** {creators_similar}")
         st.sidebar.markdown(f"**Reason for Video:** {reason_for_video}")
         st.sidebar.markdown(f"**Purpose of Video:** {purpose_of_video}")
-        # st.sidebar.video(video_file)
 
-        # # Save uploaded file to a temporary location
-        # video_path = video_file.name
-        # with open(video_path, "wb") as f:
-        #     f.write(video_file.getbuffer())
+        # Save the uploaded file to a temporary location
+        temp_video_path = os.path.join("temp_uploaded_video.mov")
+        with open(temp_video_path, "wb") as f:
+            f.write(video_file.getbuffer())
 
-        # # Process the video and display results
-        # st.write("Processing the video... This may take a while.")
-        # result = process_video(video_path)
+        # Usage
+        extractor = VideoDataExtractor(temp_video_path)
 
-        # st.subheader("Metadata")
-        # st.json(result['metadata'])
-        
-        # st.subheader("Extracted Data")
+        # Meta information
+        duration = extractor.get_duration()
+        file_size = extractor.get_file_size()
 
-        # st.markdown("**Audio Path**")
-        # st.write(result['data']['audio_path'])
+        # Video information
+        resolution = extractor.get_resolution()
+        frame_rate = extractor.get_frame_rate()
+        video_bit_rate = extractor.get_video_bit_rate()
+        # aspect_ratio = extractor.get_aspect_ratio()
+        video_codec = extractor.get_video_codec()
 
-        # st.markdown("**Frames**")
-        # for frame in result['data']['frames']:
-        #     st.image(frame)
+        # Audio information
+        audio_bit_rate = extractor.get_audio_bit_rate()
+        audio_sample_rate = extractor.get_audio_sample_rate()
+        audio_sample_bit_depth = extractor.get_audio_sample_bit_depth()
 
-        # st.markdown("**Separated Audio Components**")
-        # for root, dirs, files in os.walk(result['data']['separated_audio_folder']):
-        #     for file in files:
-        #         st.write(os.path.join(root, file))
+        # Decibel levels
+        # decibel_levels = extractor.get_decibel_levels(chunk_size=1000)  # Chunk size in milliseconds
+    
+        # Display extracted information
+        st.markdown("### Extracted Video Data")
+        st.markdown(f"**Duration:** {duration} seconds")
+        st.markdown(f"**File Size:** {file_size} bytes")
+        st.markdown(f"**Resolution:** {resolution[0]}x{resolution[1]}")
+        st.markdown(f"**Frame Rate:** {frame_rate} fps")
+        st.markdown(f"**Video Bit Rate:** {video_bit_rate} bps")
+        # st.markdown(f"**Aspect Ratio:** {aspect_ratio}")
+        st.markdown(f"**Video Codec:** {video_codec}")
+        st.markdown(f"**Audio Bit Rate:** {audio_bit_rate} bps")
+        st.markdown(f"**Audio Sample Rate:** {audio_sample_rate} Hz")
+        st.markdown(f"**Audio Sample Bit Depth:** {audio_sample_bit_depth} bits")
+        # st.markdown(f"**Decibel Levels:** {decibel_levels}")
 
-        # st.markdown("**Decibel Levels**")
-        # st.line_chart(result['data']['decibel_levels'])
+        # Clean up temporary file
+        os.remove(temp_video_path)
 
 if __name__ == "__main__":
-    # Cleanup directories at the start of the session
-    frames_folder = 'frames'
-    separated_audio_folder = 'separated_audio'
-    # if os.path.exists(frames_folder):
-    #     shutil.rmtree(frames_folder)
-    # if os.path.exists(separated_audio_folder):
-    #     shutil.rmtree(separated_audio_folder)
-
     main()

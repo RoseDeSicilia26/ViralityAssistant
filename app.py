@@ -158,22 +158,22 @@ def main():
         st.sidebar.markdown(f"**Purpose of Video:** {purpose_of_video}")
         # st.sidebar.video(video_file)
 
-        # # Save uploaded file to a temporary location
-        # video_path = video_file.name
-        # with open(video_path, "wb") as f:
-        #     f.write(video_file.getbuffer())
+        # Save uploaded file to a temporary location
+        video_path = video_file.name
+        with open(video_path, "wb") as f:
+            f.write(video_file.getbuffer())
 
-        # # Process the video and display results
-        # st.write("Processing the video... This may take a while.")
-        # result = process_video(video_path)
+        # Process the video and display results
+        st.write("Processing the video... This may take a while.")
+        result = process_video(video_path)
 
-        # st.subheader("Metadata")
-        # st.json(result['metadata'])
+        st.subheader("Metadata")
+        st.json(result['metadata'])
         
-        # st.subheader("Extracted Data")
+        st.subheader("Extracted Data")
 
-        # st.markdown("**Audio Path**")
-        # st.write(result['data']['audio_path'])
+        st.markdown("**Audio Path**")
+        st.write(result['data']['audio_path'])
 
         # st.markdown("**Frames**")
         # for frame in result['data']['frames']:

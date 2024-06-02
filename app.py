@@ -99,7 +99,7 @@ def main():
         st.sidebar.markdown(f"**Purpose of Video:** {purpose_of_video}")
 
         # Save the uploaded file to a temporary location
-        temp_video_path = os.path.join("temp_uploaded_video.mov")
+        temp_video_path = os.path.join("video.mov")
         with open(temp_video_path, "wb") as f:
             f.write(video_file.getbuffer())
 
